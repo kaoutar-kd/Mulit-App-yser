@@ -1,6 +1,6 @@
 from django.forms import ValidationError
 from rest_framework import serializers
-from .models import User,Image, SubscriptionPlan
+from .models import Role, User,Image, SubscriptionPlan
 from rest_framework import serializers
 from django.contrib.auth.models import User as User_auth
 from django.contrib.auth import authenticate
@@ -15,26 +15,48 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+    
+    role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all())  # Adjust the queryset accordingly
+
     def validate(self, attrs):
-        role = attrs.get('role', '')
         username = attrs.get('username', '')
-        print(username.isalnum())
+
         if not username.isalnum():
             raise serializers.ValidationError(
-                self.default_error_messages)
-        allowed_roles = ['beta_player', 'company_user', 'growth_plan_subscriber']
-        print(1, role)
-        if role not in allowed_roles:
-            raise ValidationError(f"Invalid role. Allowed roles are {', '.join(allowed_roles)}")
+                "Username must contain only letters and numbers.")
+
         return attrs
+
     def create(self, validated_data):
+        print(1)
+        role = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
-        instance = self.Meta.model(**validated_data)
+
+        try:
+            role = Role.objects.get(role=role)
+        except Role.DoesNotExist:
+            raise ValidationError("Role with provided ID does not exist.")
+
+        instance = self.Meta.model(role=role, **validated_data)
+
         if password is not None:
             instance.set_password(password)
+
         instance.save()
         return instance
-    
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ['role']
+    def validate_role(self, value):
+        allowed_roles = ['beta_player', 'company_user', 'growth_plan_subscriber']
+
+        if value not in allowed_roles:
+            raise serializers.ValidationError(f"Invalid role. Allowed roles are {', '.join(allowed_roles)}")
+
+        return value
+ 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
