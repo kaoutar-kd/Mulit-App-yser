@@ -93,7 +93,7 @@ WSGI_APPLICATION = 'multi_user_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'multi_user_app',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

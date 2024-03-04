@@ -2,50 +2,52 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import User, Image
-from rest_framework import generics,status, permissions
-from .serializers import RegisterSerializer,LoginSerializer,LogoutSerializer, ImageSerializer
-from rest_framework import status
+from rest_framework import generics,status
+from .serializers import UserSerializer, ImageSerializer
+from rest_framework.exceptions import AuthenticationFailed
+from .serializers import UserSerializer
+import jwt, datetime
 
 class RegisterView(generics.GenericAPIView):
-    serializer_class = RegisterSerializer
-    def post(self,request):
-        user_data = request.data
-        print(f"Received data: {user_data}")
-        serializer = self.serializer_class(data=user_data)
-        if serializer.is_valid():
-            print("Serializer is valid.")
-            serializer.save()
-            user_data = serializer.data
-            print(f"User data after saving: {user_data}")
-            return Response(user_data, status=status.HTTP_201_CREATED)
-        else:
-            print(f"Serializer errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class LoginAPIView(generics.GenericAPIView):
-    serializer_class = LoginSerializer
-
     def post(self, request):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-
-        response_data = serializer.data
-        return Response(response_data, status=status.HTTP_200_OK)
-
-class LogoutAPIView(generics.GenericAPIView):
-    serializer_class = LogoutSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.data)
+
+class LoginAPIView(generics.GenericAPIView):
+    def post(self, request):
+        username = request.data['username']
+        password = request.data['password']
+
+        user = User.objects.filter(username=username).first()
+
+        if user is None:
+            raise AuthenticationFailed('User not found!')
+
+        if not user.check_password(password):
+            raise AuthenticationFailed('Incorrect password!')
+
+        payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
+
+        token = jwt.encode(payload, 'secret', algorithm='HS256').decode('utf-8')
+
+        response = Response()
+
+        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.data = {
+            'jwt': token
+        }
+        return Response(response.data, status=status.HTTP_200_OK)
 
 class ImageDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
-        user = User.objects.get(id=request.user.id)
         try:
             image = Image.objects.get(id=id)
             serializer = ImageSerializer(image)
@@ -54,8 +56,8 @@ class ImageDetailsView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request):
-        user = User.objects.get(id=request.user.id)
-        if user.role != 'Beta Player':
+        user = User.objects.get(id=request.user.username)
+        if user.role != 'beta_player':
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         serializer = ImageSerializer(data=request.data)
@@ -65,8 +67,8 @@ class ImageDetailsView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, id):
-        user = User.objects.get(id=request.user.id)
-        if user.role != 'Beta Player':
+        user = User.objects.get(id=request.user.username)
+        if user.role != 'beta_player':
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         try:
@@ -80,8 +82,8 @@ class ImageDetailsView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, id):
-        user = User.objects.get(id=request.user.id)
-        if user.role != 'Beta Player':
+        user = User.objects.get(id=request.user.username)
+        if user.role != 'beta_player':
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         try:
