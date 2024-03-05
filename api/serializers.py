@@ -28,12 +28,12 @@ class UserSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        print(1)
+        print(validated_data)
         role = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
 
         try:
-            role = Role.objects.get(role=role)
+            role = Role.objects.get(role=role.role)
         except Role.DoesNotExist:
             raise ValidationError("Role with provided ID does not exist.")
 
@@ -60,7 +60,7 @@ class RoleSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ['uploaded_by', 'image_file', 'description']
+        fields = ['id', 'uploaded_by', 'image_file', 'description']
         
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
     class Meta:

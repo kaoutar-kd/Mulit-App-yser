@@ -12,7 +12,7 @@ class User(AbstractUser):
 
 class Image(models.Model):
     id = models.AutoField(primary_key=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     image_file = models.ImageField(upload_to='./images/', default="")
     description = models.TextField(blank=True)
 
