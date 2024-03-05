@@ -77,6 +77,7 @@ def check_access(header: dict) -> str:
     """
     try:
         token = get_token(header.get('Authorization', ''))
+        print(token)
         return decode_token(token.data['token'])['username']
-    except AuthenticationFailed as e:
-        raise e
+    except:
+        raise AuthenticationFailed()
