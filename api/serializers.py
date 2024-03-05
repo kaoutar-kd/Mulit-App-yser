@@ -1,24 +1,37 @@
 from django.forms import ValidationError
 from rest_framework import serializers
-from .models import Role, User,Image, SubscriptionPlan
-from rest_framework import serializers
+from .models import Role, User, Image, SubscriptionPlan
 from django.contrib.auth.models import User as User_auth
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
-
 class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the User model.
+
+    Attributes:
+        role: PrimaryKeyRelatedField for the User's role.
+    """
+    role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all())
+
     class Meta:
         model = User
         fields = ['id', 'username', 'role', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
-    
-    role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all())  # Adjust the queryset accordingly
 
     def validate(self, attrs):
+        """
+        Validate the username to ensure it contains only letters and numbers.
+
+        Args:
+            attrs (dict): Dictionary of validated data.
+
+        Returns:
+            dict: Validated data.
+        """
         username = attrs.get('username', '')
 
         if not username.isalnum():
@@ -28,6 +41,15 @@ class UserSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        """
+        Create a new User instance.
+
+        Args:
+            validated_data (dict): Dictionary of validated data.
+
+        Returns:
+            User: Created User instance.
+        """
         role = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
 
@@ -45,23 +67,46 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 class RoleSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Role model.
+
+    Attributes:
+        validate_role: Custom validation for the 'role' field.
+    """
     class Meta:
         model = Role
         fields = ['role']
+
     def validate_role(self, value):
+        """
+        Validate the 'role' field to ensure it is one of the allowed roles.
+
+        Args:
+            value: The value of the 'role' field.
+
+        Returns:
+            str: Validated 'role' value.
+        """
         allowed_roles = ['beta_player', 'company_user', 'growth_plan_subscriber']
 
         if value not in allowed_roles:
-            raise serializers.ValidationError(f"Invalid role. Allowed roles are {', '.join(allowed_roles)}")
+            raise serializers.ValidationError(
+                f"Invalid role. Allowed roles are {', '.join(allowed_roles)}")
 
         return value
- 
+
 class ImageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Image model.
+    """
     class Meta:
         model = Image
         fields = ['id', 'uploaded_by', 'image_file', 'description']
-        
+
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the SubscriptionPlan model.
+    """
     class Meta:
         model = SubscriptionPlan
         fields = '__all__'
