@@ -28,7 +28,6 @@ class UserSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        print(validated_data)
         role = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
 
