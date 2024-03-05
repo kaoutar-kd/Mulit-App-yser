@@ -1,9 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from api.utils import check_access, encode_token
-from .models import Role, User, Image
+from .models import Role, SubscriptionPlan, User, Image
 from rest_framework import generics, status
-from .serializers import RoleSerializer, UserSerializer, ImageSerializer
+from .serializers import RoleSerializer, SubscriptionPlanSerializer, UserSerializer, ImageSerializer
 from rest_framework.exceptions import AuthenticationFailed
 import jwt
 import datetime
@@ -263,3 +263,95 @@ class ImageDetailsView(APIView):
                 return Response(data={'data': 'delete failed'})
         except Image.DoesNotExist:
             return Response("Image does not exist", status=status.HTTP_404_NOT_FOUND)
+
+class SubscriptionPlanListView(APIView):
+    def get(self, request):
+        """
+        Retrieves a list of subscription plans.
+
+        Args:
+            request: The HTTP request.
+
+        Returns:
+            Response: A Response object with subscription plan data.
+        """
+        subscription_plans = SubscriptionPlan.objects.all()
+        serializer = SubscriptionPlanSerializer(subscription_plans, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """
+        Handles the creation of a new subscription plan.
+
+        Args:
+            request: The HTTP request.
+
+        Returns:
+            Response: A Response object indicating success or failure.
+        """
+        serializer = SubscriptionPlanSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SubscriptionPlanDetailsView(APIView):
+    def get(self, request, subscription_plan):
+        """
+        Retrieves details of a specific subscription plan.
+
+        Args:
+            request: The HTTP request.
+            subscription_plan: The subscription_plan of the subscription plan.
+
+        Returns:
+            Response: A Response object with subscription plan data or error message.
+        """
+        try:
+            subscription_plan = SubscriptionPlan.objects.get(subscription_plan=subscription_plan)
+            serializer = SubscriptionPlanSerializer(subscription_plan)
+            return Response(serializer.data)
+        except SubscriptionPlan.DoesNotExist:
+            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, subscription_plan):
+        """
+        Updates details of a specific subscription plan.
+
+        Args:
+            request: The HTTP request.
+            subscription_plan: The subscription_plan of the subscription plan.
+
+        Returns:
+            Response: A Response object with updated subscription plan data or error message.
+        """
+        try:
+            subscription_plan = SubscriptionPlan.objects.get(subscription_plan=subscription_plan)
+            serializer = SubscriptionPlanSerializer(subscription_plan, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except SubscriptionPlan.DoesNotExist:
+            return Response("Subscription plan does not exist", status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, subscription_plan):
+        """
+        Deletes a specific subscription plan.
+
+        Args:
+            request: The HTTP request.
+            subscription_plan: The subscription_plan of the subscription plan.
+
+        Returns:
+            Response: A Response object indicating success or failure.
+        """
+        try:
+            subscription_plan = SubscriptionPlan.objects.get(subscription_plan=subscription_plan)
+            operator = subscription_plan.delete()
+            if operator:
+                return Response(data={'data': 'deleted successfully'})
+            else:
+                return Response(data={'data': 'delete failed'})
+        except SubscriptionPlan.DoesNotExist:
+            return Response("Subscription plan does not exist", status=status.HTTP_404_NOT_FOUND)

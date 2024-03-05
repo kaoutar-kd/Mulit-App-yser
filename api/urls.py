@@ -5,7 +5,9 @@ from api.views import (
     LoginAPIView,
     ImageDetailsView,
     RoleDetailsView,
-    RoleListView
+    RoleListView,
+    SubscriptionPlanListView,
+    SubscriptionPlanDetailsView
 )
 
 urlpatterns = [
@@ -15,4 +17,6 @@ urlpatterns = [
     path('roles/<str:id>/', RoleDetailsView.as_view(), name='role-details'),
     path('images/', ImageListView.as_view(), name='image-list'),
     path('roles/', RoleListView.as_view(), name='role-list'),
+    path('subscription-plans/', SubscriptionPlanListView.as_view(), name='subscription-plan-list'),
+    path('subscription-plans/<str:name>/', SubscriptionPlanDetailsView.as_view(), name='subscription-plan-details'),
 ]
