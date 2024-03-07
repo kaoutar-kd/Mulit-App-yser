@@ -5,8 +5,6 @@ from .models import Role, SubscriptionPlan, User, Image
 from rest_framework import generics, status
 from .serializers import RoleSerializer, SubscriptionPlanSerializer, UserSerializer, ImageSerializer
 from rest_framework.exceptions import AuthenticationFailed
-import jwt
-import datetime
 
 
 class RegisterView(generics.GenericAPIView):
@@ -92,7 +90,7 @@ class RoleListView(APIView):
 
 class RoleDetailsView(APIView):
 
-    def get(self, request, id=None):
+    def get(self, request, id=str):
         """
         Retrieves details of a specific role.
 
@@ -103,6 +101,7 @@ class RoleDetailsView(APIView):
         Returns:
             Response: A Response object with role data or error message.
         """
+        check_access(request.headers)
         try:
             role = Role.objects.get(role=id)
             serializer = RoleSerializer(role)
@@ -110,7 +109,7 @@ class RoleDetailsView(APIView):
         except Role.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, id=None):
+    def put(self, request, id=str):
         """
         Updates details of a specific role.
 
@@ -121,6 +120,7 @@ class RoleDetailsView(APIView):
         Returns:
             Response: A Response object with updated role data or error message.
         """
+        check_access(request.headers)
         try:
             role = Role.objects.get(role=id)
             serializer = RoleSerializer(role, data=request.data)
@@ -131,7 +131,7 @@ class RoleDetailsView(APIView):
         except Role.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, id=None):
+    def delete(self, request, id=str):
         """
         Deletes a specific role.
 
@@ -142,6 +142,7 @@ class RoleDetailsView(APIView):
         Returns:
             Response: A Response object indicating success or failure.
         """
+        check_access(request.headers)
         try:
             role = Role.objects.get(role=id)
             operator = role.delete()
@@ -193,7 +194,7 @@ class ImageListView(APIView):
 
 class ImageDetailsView(APIView):
 
-    def get(self, request, id):
+    def get(self, request, id: int):
         """
         Retrieves details of a specific image.
 
@@ -212,7 +213,7 @@ class ImageDetailsView(APIView):
         except Image.DoesNotExist:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, id):
+    def put(self, request, id: int):
         """
         Updates details of a specific image.
 
@@ -238,7 +239,7 @@ class ImageDetailsView(APIView):
         except Image.DoesNotExist:
             return Response("Image does not exist", status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, id):
+    def delete(self, request, id: int):
         """
         Deletes a specific image.
 
@@ -275,6 +276,7 @@ class SubscriptionPlanListView(APIView):
         Returns:
             Response: A Response object with subscription plan data.
         """
+        check_access(request.headers)
         subscription_plans = SubscriptionPlan.objects.all()
         serializer = SubscriptionPlanSerializer(subscription_plans, many=True)
         return Response(serializer.data)
@@ -289,14 +291,15 @@ class SubscriptionPlanListView(APIView):
         Returns:
             Response: A Response object indicating success or failure.
         """
+        check_access(request.headers)
         serializer = SubscriptionPlanSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({"data": "Subscription plan created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SubscriptionPlanDetailsView(APIView):
-    def get(self, request, subscription_plan):
+    def get(self, request, subscription_plan: str):
         """
         Retrieves details of a specific subscription plan.
 
@@ -307,6 +310,7 @@ class SubscriptionPlanDetailsView(APIView):
         Returns:
             Response: A Response object with subscription plan data or error message.
         """
+        check_access(request.headers)
         try:
             subscription_plan = SubscriptionPlan.objects.get(subscription_plan=subscription_plan)
             serializer = SubscriptionPlanSerializer(subscription_plan)
@@ -314,7 +318,7 @@ class SubscriptionPlanDetailsView(APIView):
         except SubscriptionPlan.DoesNotExist:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, subscription_plan):
+    def put(self, request, subscription_plan: str):
         """
         Updates details of a specific subscription plan.
 
@@ -325,6 +329,7 @@ class SubscriptionPlanDetailsView(APIView):
         Returns:
             Response: A Response object with updated subscription plan data or error message.
         """
+        check_access(request.headers)
         try:
             subscription_plan = SubscriptionPlan.objects.get(subscription_plan=subscription_plan)
             serializer = SubscriptionPlanSerializer(subscription_plan, data=request.data)
@@ -335,7 +340,7 @@ class SubscriptionPlanDetailsView(APIView):
         except SubscriptionPlan.DoesNotExist:
             return Response("Subscription plan does not exist", status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, subscription_plan):
+    def delete(self, request, subscription_plan: str):
         """
         Deletes a specific subscription plan.
 
@@ -346,6 +351,7 @@ class SubscriptionPlanDetailsView(APIView):
         Returns:
             Response: A Response object indicating success or failure.
         """
+        check_access(request.headers)
         try:
             subscription_plan = SubscriptionPlan.objects.get(subscription_plan=subscription_plan)
             operator = subscription_plan.delete()
