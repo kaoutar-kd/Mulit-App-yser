@@ -141,7 +141,7 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_image_view_not_allowed(self):
-        # Create a user with a role other than 'beta_player'
+        # Create a user with a role other than 'company_user'
         user = User.objects.create_user(username='company_user', password='test_password')
         role = Role.objects.create(role='company_user')
         user.role = role
