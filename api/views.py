@@ -184,7 +184,6 @@ class ImageListView(APIView):
         user = User.objects.get(username=username)
         if user.role.role != 'beta_player':
             return Response("User not allowed to add the image", status=status.HTTP_401_UNAUTHORIZED)
-
         serializer = ImageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
